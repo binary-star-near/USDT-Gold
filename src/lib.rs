@@ -54,7 +54,7 @@ pub struct Contract {
 }
 
 const DATA_IMAGE_SVG_NEAR_ICON: &str =
-    "data:image/svg+xml;charset=UTF-8,%3csvg width='245' height='245' viewBox='0 0 245 245' fill='none' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='122.5' cy='122.5' r='122.5' fill='white'/%3e%3cpath d='M78 179V67H93.3342L152.668 154.935V67H167V179H151.666L92.3325 90.9891V179H78Z' fill='black'/%3e%3cpath d='M150 104C147.239 104 145 106.239 145 109C145 111.761 147.239 114 150 114V104ZM171 114C173.761 114 176 111.761 176 109C176 106.239 173.761 104 171 104V114ZM150 114H171V104H150V114Z' fill='black'/%3e%3cpath d='M150 125C147.239 125 145 127.239 145 130C145 132.761 147.239 135 150 135V125ZM171 135C173.761 135 176 132.761 176 130C176 127.239 173.761 125 171 125V135ZM150 135H171V125H150V135Z' fill='black'/%3e%3c/svg%3e";
+    "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20xmlns:xlink=%22http://www.w3.org/1999/xlink%22%20viewBox=%220%200%20611.9%20532.43%22%3E%3Cdefs%3E%3Cstyle%3E.cls-1,.cls-2%7Bfill-rule:evenodd;%7D.cls-1%7Bfill:url(#linear-gradient);%7D.cls-2%7Bfill:#fff;%7D%3C/style%3E%3ClinearGradient%20id=%22linear-gradient%22%20x1=%224846.23%22%20y1=%22-4671.46%22%20x2=%2213324.84%22%20y2=%22-4671.46%22%20gradientTransform=%22matrix(0.07,%200,%200,%20-0.07,%20-348.93,%20-70.13)%22%20gradientUnits=%22userSpaceOnUse%22%3E%3Cstop%20offset=%220%22%20stop-color=%22#d8b35d%22/%3E%3Cstop%20offset=%221%22%20stop-color=%22#f5e7bf%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Ctitle%3Etether-gold%3C/title%3E%3Cg%20id=%22Layer_2%22%20data-name=%22Layer%202%22%3E%3Cg%20id=%22Layer_1-2%22%20data-name=%22Layer%201%22%3E%3Cg%20id=%22Layer_1-3%22%20data-name=%22Layer_1%22%3E%3Cpath%20class=%22cls-1%22%20d=%22M112.11,2.71.49,237.12a4.36,4.36,0,0,0,.9,5.23L302.7,531.22a4.72,4.72,0,0,0,6.32,0L610.51,242.35a4.41,4.41,0,0,0,.9-5.23L499.79,2.71a4.12,4.12,0,0,0-4-2.71H116.07a4.49,4.49,0,0,0-4,2.71Z%22/%3E%3Cpath%20class=%22cls-2%22%20d=%22M344.72,261.1h0c-2.16.18-13.34.9-38.23.9-19.83,0-33.9-.54-38.95-.9h0c-76.63-3.42-133.79-16.77-133.79-32.64s57.16-29.39,133.79-32.81v52.11c5,.36,19.3,1.26,39.13,1.26,23.8,0,35.7-1.08,37.87-1.26V195.65c76.45,3.42,133.61,16.77,133.61,32.63s-57,29.4-133.43,32.82Zm0-70.68V143.71H451.47V72.49H160.8v71.22H267.54v46.71c-86.73,4-152,21.09-152,41.83s65.27,37.69,152,41.83V423.57h77.18V274.08c86.55-4,151.65-21.1,151.65-41.65s-65.1-38.05-151.65-42h0Z%22/%3E%3C/g%3E%3C/g%3E%3C/g%3E%3C/svg%3E";
 
 #[near_bindgen]
 impl Contract {
@@ -67,8 +67,8 @@ impl Contract {
             total_supply,
             FungibleTokenMetadata {
                 spec: FT_METADATA_SPEC.to_string(),
-                name: "USD Near".to_string(),
-                symbol: "USDN".to_string(),
+                name: "USDT Gold".to_string(),
+                symbol: "XAUT".to_string(),
                 icon: Some(DATA_IMAGE_SVG_NEAR_ICON.to_string()),
                 reference: None,
                 reference_hash: None,
