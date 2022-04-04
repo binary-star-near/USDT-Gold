@@ -310,7 +310,7 @@ impl Contract {
 }
 
 #[no_mangle]
-pub fn update() {
+pub fn upgrade() {
     env::setup_panic_hook();
 
     let contract: Contract = env::state_read().expect("Contract is not initialized");
