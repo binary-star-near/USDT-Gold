@@ -277,7 +277,7 @@ impl Contract {
 
     /// Should only be called by this contract on migration.
     /// This is NOOP implementation. KEEP IT if you haven't changed contract state.
-    /// This method is called from `update()` method.
+    /// This method is called from `upgrade()` method.
     /// For next version upgrades, change this function.
     #[init(ignore_state)]
     #[private]
@@ -317,12 +317,12 @@ pub fn upgrade() {
     contract.abort_if_not_owner();
 
     const MIGRATE_METHOD_NAME: &[u8; 7] = b"migrate";
-    const UPDATE_GAS_LEFTOVER: Gas = Gas(5_000_000_000_000);
+    const UPGRADE_GAS_LEFTOVER: Gas = Gas(5_000_000_000_000);
 
     unsafe {
         // Load code into register 0 result from the input argument if factory call or from promise if callback.
         sys::input(0);
-        // Create a promise batch to update current contract with code from register 0.
+        // Create a promise batch to upgrade current contract with code from register 0.
         let promise_id = sys::promise_batch_create(
             env::current_account_id().as_bytes().len() as u64,
             env::current_account_id().as_bytes().as_ptr() as u64,
@@ -338,7 +338,7 @@ pub fn upgrade() {
             0,
             0,
             0,
-            (env::prepaid_gas() - env::used_gas() - UPDATE_GAS_LEFTOVER).0,
+            (env::prepaid_gas() - env::used_gas() - UPGRADE_GAS_LEFTOVER).0,
         );
         sys::promise_return(promise_id);
     }

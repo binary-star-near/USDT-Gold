@@ -35,7 +35,7 @@ const methods = {
   const wasm = await fs.readFile(config.contractPath);
   const account = new nearAPI.Account(near.connection, config.accountId);
 
-  // Update the contract.
+  // Upgrade the contract.
   await account.signAndSendTransaction({
     receiverId: config.contractId,
     actions: [
