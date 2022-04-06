@@ -3,7 +3,7 @@
   "scripts": {
     "deploy": "./scripts/deploy.sh",
     "demo": "./scripts/demo.sh",
-    "update": "node scripts/update.js"
+    "upgrade": "node scripts/upgrade.js"
   },
   "devDependencies": {
     "bn": "^1.0.5",
