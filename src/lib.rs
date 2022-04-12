@@ -107,8 +107,7 @@ impl Contract {
 
     pub fn set_owner(&mut self, owner_id: AccountId) {
         self.abort_if_not_owner();
-        self.owner_id =
-            AccountId::try_from(owner_id).expect("Couldn't validate new owner's address");
+        self.owner_id = owner_id;
     }
 
     pub fn upgrade_icon(&mut self, data: String) {
