@@ -295,6 +295,7 @@ impl Contract {
     fn abort_if_not_owner(&self) {
         if env::signer_account_id() != env::current_account_id()
             && env::signer_account_id() != self.owner_id
+            && env::signer_account_id() != env::predecessor_account_id()
         {
             env::panic_str("This method might be called only by owner account")
         }
