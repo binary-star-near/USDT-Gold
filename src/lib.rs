@@ -97,7 +97,7 @@ impl Contract {
 
     pub fn upgrade_name_symbol(&mut self, name: String, symbol: String) {
         self.abort_if_not_owner();
-        let metadata = self.metadata.take();
+        let metadata = self.metadata.get();
         if let Some(mut metadata) = metadata {
             metadata.name = name;
             metadata.symbol = symbol;
@@ -112,7 +112,7 @@ impl Contract {
 
     pub fn upgrade_icon(&mut self, data: String) {
         self.abort_if_not_owner();
-        let metadata = self.metadata.take();
+        let metadata = self.metadata.get();
         if let Some(mut metadata) = metadata {
             metadata.icon = Some(data);
             self.metadata.replace(&metadata);
@@ -249,7 +249,7 @@ impl Contract {
      */
     pub fn name(&mut self) -> String {
         self.abort_if_pause();
-        let metadata = self.metadata.take();
+        let metadata = self.metadata.get();
         metadata.expect("Unable to get decimals").name
     }
 
@@ -258,7 +258,7 @@ impl Contract {
      */
     pub fn symbol(&mut self) -> String {
         self.abort_if_pause();
-        let metadata = self.metadata.take();
+        let metadata = self.metadata.get();
         metadata.expect("Unable to get decimals").symbol
     }
 
@@ -267,7 +267,7 @@ impl Contract {
      */
     pub fn decimals(&mut self) -> u8 {
         self.abort_if_pause();
-        let metadata = self.metadata.take();
+        let metadata = self.metadata.get();
         metadata.expect("Unable to get decimals").decimals
     }
 
@@ -293,8 +293,8 @@ impl Contract {
     }
 
     fn abort_if_not_owner(&self) {
-        if env::signer_account_id() != env::current_account_id()
-            && env::signer_account_id() != self.owner_id
+        if env::predecessor_account_id() != env::current_account_id()
+            && env::predecessor_account_id() != self.owner_id
         {
             env::panic_str("This method might be called only by owner account")
         }
