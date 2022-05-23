@@ -352,7 +352,7 @@ impl FungibleTokenCore for Contract {
     #[payable]
     fn ft_transfer(&mut self, receiver_id: AccountId, amount: U128, memo: Option<String>) {
         self.abort_if_pause();
-        let sender_id = AccountId::try_from(env::signer_account_id())
+        let sender_id = AccountId::try_from(env::predecessor_account_id())
             .expect("Couldn't validate sender address");
         match self.get_blacklist_status(&sender_id) {
             BlackListStatus::Allowable => {
