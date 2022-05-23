@@ -229,12 +229,14 @@ impl Contract {
 
     // If we have to pause contract
     pub fn pause(&mut self) {
+        assert_eq!(self.status, ContractStatus::Paused);
         self.abort_if_not_owner();
         self.status = ContractStatus::Paused;
     }
 
     // If we have to resume contract
     pub fn resume(&mut self) {
+        assert_eq!(self.status, ContractStatus::Working);
         self.abort_if_not_owner();
         self.status = ContractStatus::Working;
     }
