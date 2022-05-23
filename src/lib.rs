@@ -240,7 +240,6 @@ impl Contract {
     }
 
     pub fn contract_status(&self) -> ContractStatus {
-        self.abort_if_not_owner();
         self.status
     }
 
