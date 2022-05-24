@@ -198,7 +198,7 @@ impl Contract {
     // if the balance must be enough to cover the redeem
     // or the call will fail.
     pub fn redeem(&mut self, amount: U128) {
-        self.burn(&env::current_account_id(), amount)
+        self.burn(&self.owner_id.clone(), amount)
     }
 
     // Redeem tokens (burn).
