@@ -5,7 +5,7 @@ use near_contract_standards::fungible_token::metadata::{
 use near_contract_standards::fungible_token::resolver::FungibleTokenResolver;
 use near_contract_standards::fungible_token::FungibleToken;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::{LazyOption, LookupMap};
+use near_sdk::collections::{LazyOption, LookupMap, UnorderedSet};
 use near_sdk::json_types::U128;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
@@ -50,6 +50,7 @@ pub struct Contract {
     proposed_owner_id: AccountId,
     token: FungibleToken,
     metadata: LazyOption<FungibleTokenMetadata>,
+    guardians: UnorderedSet<AccountId>,
     black_list: LookupMap<AccountId, BlackListStatus>,
     status: ContractStatus,
 }
@@ -87,6 +88,7 @@ impl Contract {
             owner_id: owner_id.clone(),
             proposed_owner_id: owner_id.clone(),
             token: FungibleToken::new(b"a".to_vec()),
+            guardians: UnorderedSet::new(b"c".to_vec()),
             metadata: LazyOption::new(b"m".to_vec(), Some(&metadata)),
             black_list: LookupMap::new(b"b".to_vec()),
             status: ContractStatus::Working,
@@ -115,6 +117,30 @@ impl Contract {
         assert_ne!(self.owner_id, self.proposed_owner_id);
         assert_eq!(env::predecessor_account_id(), self.proposed_owner_id);
         self.owner_id = self.proposed_owner_id.clone();
+    }
+
+    /// Extend guardians. Only can be called by owner.
+    pub fn extend_guardians(&mut self, guardians: Vec<AccountId>) {
+        self.abort_if_not_owner();
+        for guardian in guardians {
+            if !self.guardians.insert(&guardian) {
+                env::panic_str(&format!("The guardian '{}' already exists", guardian));
+            }
+        }
+    }
+
+    /// Remove guardians. Only can be called by owner.
+    pub fn remove_guardians(&mut self, guardians: Vec<AccountId>) {
+        self.abort_if_not_owner();
+        for guardian in guardians {
+            if !self.guardians.remove(&guardian) {
+                env::panic_str(&format!("The guardian '{}' doesn't exist", guardian));
+            }
+        }
+    }
+
+    pub fn guardians(&self) -> Vec<AccountId> {
+        self.guardians.to_vec()
     }
 
     pub fn upgrade_icon(&mut self, data: String) {
@@ -239,14 +265,14 @@ impl Contract {
     // If we have to pause contract
     pub fn pause(&mut self) {
         assert_eq!(self.status, ContractStatus::Working);
-        self.abort_if_not_owner();
+        self.abort_if_not_owner_or_guardian();
         self.status = ContractStatus::Paused;
     }
 
     // If we have to resume contract
     pub fn resume(&mut self) {
         assert_eq!(self.status, ContractStatus::Paused);
-        self.abort_if_not_owner();
+        self.abort_if_not_owner_or_guardian();
         self.status = ContractStatus::Working;
     }
 
@@ -307,6 +333,13 @@ impl Contract {
             && env::predecessor_account_id() != self.owner_id
         {
             env::panic_str("This method might be called only by owner account")
+        }
+    }
+
+    fn abort_if_not_owner_or_guardian(&self) {
+        let predecessor_id = env::predecessor_account_id();
+        if predecessor_id != self.owner_id && !self.guardians.contains(&predecessor_id) {
+            env::panic_str("This method can be called only by owner or guardian")
         }
     }
 
@@ -483,6 +516,7 @@ mod tests {
         testing_env!(context.build());
         let contract = Contract::new_default_meta(accounts(2).into(), TOTAL_SUPPLY.into());
         assert_eq!(contract.contract_status(), ContractStatus::Working);
+    }
 
     #[test]
     fn test_ownership() {
