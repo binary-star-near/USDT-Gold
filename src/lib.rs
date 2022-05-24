@@ -470,37 +470,6 @@ mod tests {
     }
 
     #[test]
-    fn test_contract_status_change() {
-        let context = get_context(accounts(1));
-        testing_env!(context.build());
-        let mut contract = Contract::new_default_meta(accounts(1).into(), TOTAL_SUPPLY.into());
-        contract.pause();
-        assert_eq!(contract.contract_status(), ContractStatus::Paused);
-        contract.resume();
-        assert_eq!(contract.contract_status(), ContractStatus::Working);
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_contract_status_pause() {
-        let context = get_context(accounts(1));
-        testing_env!(context.build());
-        let mut contract = Contract::new_default_meta(accounts(1).into(), TOTAL_SUPPLY.into());
-        contract.pause();
-        assert_eq!(contract.contract_status(), ContractStatus::Paused);
-        contract.pause();
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_contract_status_resume() {
-        let context = get_context(accounts(1));
-        testing_env!(context.build());
-        let mut contract = Contract::new_default_meta(accounts(1).into(), TOTAL_SUPPLY.into());
-        contract.resume();
-    }
-
-    #[test]
     fn test_transfer() {
         let mut context = get_context(accounts(2));
         testing_env!(context.build());
@@ -667,5 +636,25 @@ mod tests {
             let _ = contract.ft_total_supply();
         });
         assert!(result.is_err());
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_contract_status_pause() {
+        let context = get_context(accounts(1));
+        testing_env!(context.build());
+        let mut contract = Contract::new_default_meta(accounts(1).into(), TOTAL_SUPPLY.into());
+        contract.pause();
+        assert_eq!(contract.contract_status(), ContractStatus::Paused);
+        contract.pause();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_contract_status_resume() {
+        let context = get_context(accounts(1));
+        testing_env!(context.build());
+        let mut contract = Contract::new_default_meta(accounts(1).into(), TOTAL_SUPPLY.into());
+        contract.resume();
     }
 }
