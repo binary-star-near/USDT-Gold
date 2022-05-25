@@ -717,12 +717,13 @@ mod tests {
         let mut context = get_context(accounts(2));
         testing_env!(context.build());
         let mut contract = Contract::new_default_meta(accounts(2).into(), TOTAL_SUPPLY.into());
+        contract.extend_guardians(vec![accounts(3)]);
         testing_env!(context
             .storage_usage(env::storage_usage())
             .attached_deposit(contract.storage_balance_bounds().min.into())
-            .predecessor_account_id(accounts(1))
+            .predecessor_account_id(accounts(3))
             .current_account_id(accounts(1))
-            .signer_account_id(accounts(1))
+            .signer_account_id(accounts(3))
             .build());
         assert_eq!(contract.contract_status(), ContractStatus::Working);
         contract.pause();
