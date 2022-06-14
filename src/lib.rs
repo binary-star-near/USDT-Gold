@@ -5,7 +5,7 @@ use near_contract_standards::fungible_token::metadata::{
 use near_contract_standards::fungible_token::resolver::FungibleTokenResolver;
 use near_contract_standards::fungible_token::FungibleToken;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::{LazyOption, LookupMap};
+use near_sdk::collections::{LazyOption, LookupMap, UnorderedSet};
 use near_sdk::json_types::U128;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
@@ -50,6 +50,7 @@ pub struct Contract {
     proposed_owner_id: AccountId,
     token: FungibleToken,
     metadata: LazyOption<FungibleTokenMetadata>,
+    guardians: UnorderedSet<AccountId>,
     black_list: LookupMap<AccountId, BlackListStatus>,
     status: ContractStatus,
 }
@@ -87,6 +88,7 @@ impl Contract {
             owner_id: owner_id.clone(),
             proposed_owner_id: owner_id.clone(),
             token: FungibleToken::new(b"a".to_vec()),
+            guardians: UnorderedSet::new(b"c".to_vec()),
             metadata: LazyOption::new(b"m".to_vec(), Some(&metadata)),
             black_list: LookupMap::new(b"b".to_vec()),
             status: ContractStatus::Working,
@@ -115,6 +117,30 @@ impl Contract {
         assert_ne!(self.owner_id, self.proposed_owner_id);
         assert_eq!(env::predecessor_account_id(), self.proposed_owner_id);
         self.owner_id = self.proposed_owner_id.clone();
+    }
+
+    /// Extend guardians. Only can be called by owner.
+    pub fn extend_guardians(&mut self, guardians: Vec<AccountId>) {
+        self.abort_if_not_owner();
+        for guardian in guardians {
+            if !self.guardians.insert(&guardian) {
+                env::panic_str(&format!("The guardian '{}' already exists", guardian));
+            }
+        }
+    }
+
+    /// Remove guardians. Only can be called by owner.
+    pub fn remove_guardians(&mut self, guardians: Vec<AccountId>) {
+        self.abort_if_not_owner();
+        for guardian in guardians {
+            if !self.guardians.remove(&guardian) {
+                env::panic_str(&format!("The guardian '{}' doesn't exist", guardian));
+            }
+        }
+    }
+
+    pub fn guardians(&self) -> Vec<AccountId> {
+        self.guardians.to_vec()
     }
 
     pub fn upgrade_icon(&mut self, data: String) {
@@ -239,14 +265,14 @@ impl Contract {
     // If we have to pause contract
     pub fn pause(&mut self) {
         assert_eq!(self.status, ContractStatus::Working);
-        self.abort_if_not_owner();
+        self.abort_if_not_owner_or_guardian();
         self.status = ContractStatus::Paused;
     }
 
     // If we have to resume contract
     pub fn resume(&mut self) {
         assert_eq!(self.status, ContractStatus::Paused);
-        self.abort_if_not_owner();
+        self.abort_if_not_owner_or_guardian();
         self.status = ContractStatus::Working;
     }
 
@@ -303,10 +329,16 @@ impl Contract {
     }
 
     fn abort_if_not_owner(&self) {
-        if env::predecessor_account_id() != env::current_account_id()
-            && env::predecessor_account_id() != self.owner_id
-        {
+        if env::predecessor_account_id() != self.owner_id {
             env::panic_str("This method might be called only by owner account")
+        }
+    }
+
+    fn abort_if_not_owner_or_guardian(&self) {
+        if env::predecessor_account_id() != self.owner_id
+            && !self.guardians.contains(&env::predecessor_account_id())
+        {
+            env::panic_str("This method can be called only by owner or guardian")
         }
     }
 
@@ -483,6 +515,7 @@ mod tests {
         testing_env!(context.build());
         let contract = Contract::new_default_meta(accounts(2).into(), TOTAL_SUPPLY.into());
         assert_eq!(contract.contract_status(), ContractStatus::Working);
+    }
 
     #[test]
     fn test_ownership() {
@@ -494,6 +527,40 @@ mod tests {
         testing_env!(context.predecessor_account_id(accounts(2)).build());
         contract.accept_ownership();
         assert_eq!(contract.owner_id, accounts(2));
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_extend_guardians_by_user() {
+        let mut context = get_context(accounts(1));
+        testing_env!(context.build());
+        let mut contract = Contract::new_default_meta(accounts(1).into(), TOTAL_SUPPLY.into());
+        testing_env!(context.predecessor_account_id(accounts(2)).build());
+        contract.extend_guardians(vec![accounts(3)]);
+    }
+
+    #[test]
+    fn test_guardians() {
+        let mut context = get_context(accounts(1));
+        testing_env!(context.build());
+        let mut contract = Contract::new_default_meta(accounts(1).into(), TOTAL_SUPPLY.into());
+        testing_env!(context.predecessor_account_id(accounts(1)).build());
+        contract.extend_guardians(vec![accounts(2)]);
+        assert!(contract.guardians.contains(&accounts(2)));
+        contract.remove_guardians(vec![accounts(2)]);
+        assert!(!contract.guardians.contains(&accounts(2)));
+    }
+
+    #[test]
+    fn test_view_guardians() {
+        let mut context = get_context(accounts(1));
+        testing_env!(context.build());
+        let mut contract = Contract::new_default_meta(accounts(1).into(), TOTAL_SUPPLY.into());
+        testing_env!(context.predecessor_account_id(accounts(1)).build());
+        contract.extend_guardians(vec![accounts(2)]);
+        assert_eq!(contract.guardians()[0], accounts(2));
+        contract.remove_guardians(vec![accounts(2)]);
+        assert_eq!(contract.guardians().len(), 0);
     }
 
     #[test]
@@ -537,10 +604,7 @@ mod tests {
         let mut contract = Contract::new_default_meta(accounts(2).into(), TOTAL_SUPPLY.into());
         testing_env!(context
             .storage_usage(env::storage_usage())
-            .attached_deposit(contract.storage_balance_bounds().min.into())
-            .predecessor_account_id(accounts(1))
-            .current_account_id(accounts(1))
-            .signer_account_id(accounts(1))
+            .predecessor_account_id(accounts(2))
             .build());
 
         assert_eq!(
@@ -559,8 +623,11 @@ mod tests {
             contract.get_blacklist_status(&accounts(1)),
             BlackListStatus::Allowable
         );
-        let transfer_amount = TOTAL_SUPPLY / 3;
-        contract.issue(U128::from(transfer_amount));
+
+        contract.token.internal_register_account(&accounts(1));
+        contract
+            .token
+            .internal_deposit(&accounts(1), TOTAL_SUPPLY / 3);
 
         contract.add_to_blacklist(&accounts(1));
         let total_supply_before = contract.token.total_supply;
@@ -627,9 +694,7 @@ mod tests {
         testing_env!(context
             .storage_usage(env::storage_usage())
             .attached_deposit(contract.storage_balance_bounds().min.into())
-            .predecessor_account_id(accounts(1))
-            .current_account_id(accounts(1))
-            .signer_account_id(accounts(1))
+            .predecessor_account_id(accounts(2))
             .build());
 
         let previous_total_supply = contract.ft_total_supply();
@@ -646,12 +711,13 @@ mod tests {
         let mut context = get_context(accounts(2));
         testing_env!(context.build());
         let mut contract = Contract::new_default_meta(accounts(2).into(), TOTAL_SUPPLY.into());
+        contract.extend_guardians(vec![accounts(3)]);
         testing_env!(context
             .storage_usage(env::storage_usage())
             .attached_deposit(contract.storage_balance_bounds().min.into())
-            .predecessor_account_id(accounts(1))
+            .predecessor_account_id(accounts(3))
             .current_account_id(accounts(1))
-            .signer_account_id(accounts(1))
+            .signer_account_id(accounts(3))
             .build());
         assert_eq!(contract.contract_status(), ContractStatus::Working);
         contract.pause();
