@@ -1,6 +1,8 @@
 {
   "name": "usdt-gold",
   "scripts": {
+    "prebuild": "rustup target add wasm32-unknown-unknown",
+    "build": "cargo build --target wasm32-unknown-unknown --release",
     "deploy": "./scripts/deploy.sh",
     "demo": "./scripts/demo.sh",
     "upgrade": "node scripts/upgrade.js"
