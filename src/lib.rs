@@ -161,7 +161,8 @@ impl Contract {
     // Issue a new amount of tokens
     // these tokens are deposited into the owner address
     pub fn issue(&mut self, amount: U128) -> Balance {
-        self.mint(&env::current_account_id(), amount)
+        self.abort_if_not_owner();
+        self.mint(&self.owner_id.clone(), amount)
     }
 
     // Creates `amount` tokens and assigns them to `account`, increasing
@@ -197,7 +198,8 @@ impl Contract {
     // if the balance must be enough to cover the redeem
     // or the call will fail.
     pub fn redeem(&mut self, amount: U128) {
-        self.burn(&env::current_account_id(), amount)
+        self.abort_if_not_owner();
+        self.burn(&self.owner_id.clone(), amount)
     }
 
     // Redeem tokens (burn).
@@ -579,13 +581,13 @@ mod tests {
         testing_env!(context
             .storage_usage(env::storage_usage())
             .attached_deposit(contract.storage_balance_bounds().min.into())
-            .predecessor_account_id(accounts(1))
+            .predecessor_account_id(accounts(2))
             .current_account_id(accounts(1))
-            .signer_account_id(accounts(1))
+            .signer_account_id(accounts(2))
             .build());
 
         let previous_total_supply = contract.ft_total_supply().0;
-        let previous_balance = contract.ft_balance_of(accounts(1)).0;
+        let previous_balance = contract.ft_balance_of(accounts(2)).0;
         let reissuance_balance: Balance = 1_234_567_891;
         contract.issue(U128::from(reissuance_balance));
         assert_eq!(
@@ -594,7 +596,7 @@ mod tests {
         );
         assert_eq!(
             previous_balance + reissuance_balance,
-            contract.ft_balance_of(accounts(1)).0
+            contract.ft_balance_of(accounts(2)).0
         );
     }
 
