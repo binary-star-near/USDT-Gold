@@ -85,7 +85,7 @@ impl Contract {
         metadata.assert_valid();
         let mut this = Self {
             owner_id: owner_id.clone(),
-            proposed_owner_id: "a.a".parse().unwrap(),
+            proposed_owner_id: owner_id.clone(),
             token: FungibleToken::new(b"a".to_vec()),
             metadata: LazyOption::new(b"m".to_vec(), Some(&metadata)),
             black_list: LookupMap::new(b"b".to_vec()),
@@ -112,9 +112,9 @@ impl Contract {
     }
 
     pub fn accept_ownership(&mut self) {
+        assert_ne!(self.owner_id, self.proposed_owner_id);
         assert_eq!(env::predecessor_account_id(), self.proposed_owner_id);
         self.owner_id = self.proposed_owner_id.clone();
-        self.proposed_owner_id = "a.a".parse().unwrap();
     }
 
     pub fn upgrade_icon(&mut self, data: String) {
