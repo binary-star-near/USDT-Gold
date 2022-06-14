@@ -47,6 +47,7 @@ impl std::fmt::Display for ContractStatus {
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct Contract {
     owner_id: AccountId,
+    proposed_owner_id: AccountId,
     token: FungibleToken,
     metadata: LazyOption<FungibleTokenMetadata>,
     black_list: LookupMap<AccountId, BlackListStatus>,
@@ -84,6 +85,7 @@ impl Contract {
         metadata.assert_valid();
         let mut this = Self {
             owner_id: owner_id.clone(),
+            proposed_owner_id: owner_id.clone(),
             token: FungibleToken::new(b"a".to_vec()),
             metadata: LazyOption::new(b"m".to_vec(), Some(&metadata)),
             black_list: LookupMap::new(b"b".to_vec()),
@@ -104,9 +106,15 @@ impl Contract {
         }
     }
 
-    pub fn set_owner(&mut self, owner_id: AccountId) {
+    pub fn propose_new_owner(&mut self, proposed_owner_id: AccountId) {
         self.abort_if_not_owner();
-        self.owner_id = owner_id;
+        self.proposed_owner_id = proposed_owner_id;
+    }
+
+    pub fn accept_ownership(&mut self) {
+        assert_ne!(self.owner_id, self.proposed_owner_id);
+        assert_eq!(env::predecessor_account_id(), self.proposed_owner_id);
+        self.owner_id = self.proposed_owner_id.clone();
     }
 
     pub fn upgrade_icon(&mut self, data: String) {
@@ -475,6 +483,17 @@ mod tests {
         testing_env!(context.build());
         let contract = Contract::new_default_meta(accounts(2).into(), TOTAL_SUPPLY.into());
         assert_eq!(contract.contract_status(), ContractStatus::Working);
+
+    #[test]
+    fn test_ownership() {
+        let mut context = get_context(accounts(1));
+        testing_env!(context.build());
+        let mut contract = Contract::new_default_meta(accounts(1).into(), TOTAL_SUPPLY.into());
+        contract.propose_new_owner(accounts(2));
+        assert_eq!(contract.owner_id, accounts(1));
+        testing_env!(context.predecessor_account_id(accounts(2)).build());
+        contract.accept_ownership();
+        assert_eq!(contract.owner_id, accounts(2));
     }
 
     #[test]
