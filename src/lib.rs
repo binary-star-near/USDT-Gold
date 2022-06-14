@@ -239,7 +239,6 @@ impl Contract {
     }
 
     pub fn contract_status(&self) -> ContractStatus {
-        self.abort_if_not_owner();
         self.status
     }
 
@@ -464,6 +463,14 @@ mod tests {
         let context = get_context(accounts(1));
         testing_env!(context.build());
         let _contract = Contract::default();
+    }
+
+    #[test]
+    fn test_contract_status() {
+        let context = get_context(accounts(1));
+        testing_env!(context.build());
+        let contract = Contract::new_default_meta(accounts(2).into(), TOTAL_SUPPLY.into());
+        assert_eq!(contract.contract_status(), ContractStatus::Working);
     }
 
     #[test]
