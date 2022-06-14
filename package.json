@@ -1,6 +1,7 @@
 {
   "name": "usdt-gold",
   "scripts": {
+    "build": "cargo build --target wasm32-unknown-unknown --release",
     "deploy": "./scripts/deploy.sh",
     "demo": "./scripts/demo.sh",
     "upgrade": "node scripts/upgrade.js"
