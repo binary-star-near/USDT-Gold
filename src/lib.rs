@@ -329,18 +329,14 @@ impl Contract {
     }
 
     fn abort_if_not_owner(&self) {
-        if env::predecessor_account_id() != env::current_account_id()
-            && env::predecessor_account_id() != self.owner_id
-        {
+        if env::predecessor_account_id() != self.owner_id {
             env::panic_str("This method might be called only by owner account")
         }
     }
 
     fn abort_if_not_owner_or_guardian(&self) {
-        let predecessor_id = env::predecessor_account_id();
-        if predecessor_id != self.owner_id
-            && !self.guardians.contains(&predecessor_id)
-            && predecessor_id != env::current_account_id()
+        if env::predecessor_account_id() != self.owner_id
+            && !self.guardians.contains(&env::predecessor_account_id())
         {
             env::panic_str("This method can be called only by owner or guardian")
         }
@@ -608,10 +604,7 @@ mod tests {
         let mut contract = Contract::new_default_meta(accounts(2).into(), TOTAL_SUPPLY.into());
         testing_env!(context
             .storage_usage(env::storage_usage())
-            .attached_deposit(contract.storage_balance_bounds().min.into())
-            .predecessor_account_id(accounts(1))
-            .current_account_id(accounts(1))
-            .signer_account_id(accounts(1))
+            .predecessor_account_id(accounts(2))
             .build());
 
         assert_eq!(
@@ -630,8 +623,11 @@ mod tests {
             contract.get_blacklist_status(&accounts(1)),
             BlackListStatus::Allowable
         );
-        let transfer_amount = TOTAL_SUPPLY / 3;
-        contract.issue(U128::from(transfer_amount));
+
+        contract.token.internal_register_account(&accounts(1));
+        contract
+            .token
+            .internal_deposit(&accounts(1), TOTAL_SUPPLY / 3);
 
         contract.add_to_blacklist(&accounts(1));
         let total_supply_before = contract.token.total_supply;
@@ -698,9 +694,7 @@ mod tests {
         testing_env!(context
             .storage_usage(env::storage_usage())
             .attached_deposit(contract.storage_balance_bounds().min.into())
-            .predecessor_account_id(accounts(1))
-            .current_account_id(accounts(1))
-            .signer_account_id(accounts(1))
+            .predecessor_account_id(accounts(2))
             .build());
 
         let previous_total_supply = contract.ft_total_supply();
