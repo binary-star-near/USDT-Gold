@@ -228,12 +228,14 @@ impl Contract {
 
     // If we have to pause contract
     pub fn pause(&mut self) {
+        assert_eq!(self.status, ContractStatus::Working);
         self.abort_if_not_owner();
         self.status = ContractStatus::Paused;
     }
 
     // If we have to resume contract
     pub fn resume(&mut self) {
+        assert_eq!(self.status, ContractStatus::Paused);
         self.abort_if_not_owner();
         self.status = ContractStatus::Working;
     }
@@ -640,5 +642,25 @@ mod tests {
             let _ = contract.ft_total_supply();
         });
         assert!(result.is_err());
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_contract_status_pause() {
+        let context = get_context(accounts(1));
+        testing_env!(context.build());
+        let mut contract = Contract::new_default_meta(accounts(1).into(), TOTAL_SUPPLY.into());
+        contract.pause();
+        assert_eq!(contract.contract_status(), ContractStatus::Paused);
+        contract.pause();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_contract_status_resume() {
+        let context = get_context(accounts(1));
+        testing_env!(context.build());
+        let mut contract = Contract::new_default_meta(accounts(1).into(), TOTAL_SUPPLY.into());
+        contract.resume();
     }
 }
