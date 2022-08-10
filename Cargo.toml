@@ -1,6 +1,6 @@
 [package]
 edition = "2018"
-name = "usdt-gold"
+name = "tether_token"
 version = "0.1.0"
 
 [lib]

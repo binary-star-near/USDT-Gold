@@ -69,8 +69,8 @@ impl Contract {
             total_supply,
             FungibleTokenMetadata {
                 spec: FT_METADATA_SPEC.to_string(),
-                name: "USDT Gold".to_string(),
-                symbol: "XAUT".to_string(),
+                name: "Tether USD".to_string(),
+                symbol: "USDt".to_string(),
                 icon: Some(DATA_IMAGE_SVG_NEAR_ICON.to_string()),
                 reference: None,
                 reference_hash: None,
@@ -286,7 +286,7 @@ impl Contract {
     pub fn name(&mut self) -> String {
         self.abort_if_pause();
         let metadata = self.metadata.get();
-        metadata.expect("Unable to get decimals").name
+        metadata.expect("Unable to get name").name
     }
 
     /**
@@ -295,7 +295,7 @@ impl Contract {
     pub fn symbol(&mut self) -> String {
         self.abort_if_pause();
         let metadata = self.metadata.get();
-        metadata.expect("Unable to get decimals").symbol
+        metadata.expect("Unable to get symbol").symbol
     }
 
     /**
