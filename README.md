@@ -48,7 +48,7 @@ $ near deploy --wasmFile target/wasm32-unknown-unknown/release/tether_token.wasm
 
 ### On `mainnet`:
 
-####Note on address ownership/deploy:####
+#### Note on address ownership/deploy:
 `--accountId=` : This will be the address the contract is deployed to and the community will use to interact with the token. It should have ~ 25 Near to deploy the contract (1 Near / 100kb , deployed contract ~ 2MB)
 
 
