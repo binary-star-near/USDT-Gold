@@ -5,6 +5,7 @@ The source code of Tether USDT contract.
 ## Packages
 
 rust : `curl https://sh.rustup.rs -sSf | sh`   or manually https://forge.rust-lang.org/infra/other-installation-methods.html
+
 near-cli : `npm i -g near-cli`
 
 
@@ -46,6 +47,13 @@ $ near deploy --wasmFile target/wasm32-unknown-unknown/release/tether_token.wasm
 ```
 
 ### On `mainnet`:
+
+####Note on address ownership/deploy:####
+`--accountId=` : This will be the address the contract is deployed to and the community will use to interact with the token. It should have ~ 25 Near to deploy the contract (1 Near / 100kb , deployed contract ~ 2MB)
+
+
+`owner_id`  : This should be the Multi Safe multisig address for admin management
+
 
 ```bash
 $ near deploy --wasmFile target/wasm32-unknown-unknown/release/tether_token.wasm --initFunction new_default_meta --initArgs '{"owner_id": "tether-admin-id.multisafe.near", "total_supply":  "0"}' --accountId=usdt.tether-token.near --networkId=mainnet --nodeUrl=https://rpc.mainnet.near.org
