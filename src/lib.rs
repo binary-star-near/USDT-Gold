@@ -320,6 +320,12 @@ impl Contract {
         }
     }
 
+    fn abort_if_blacklisted(&self, account_id: &AccountId) {
+        if self.get_blacklist_status(account_id) != BlackListStatus::Allowable {
+            env::panic_str(&format!("Account '{}' is banned", account_id));
+        }
+    }
+
     fn on_account_closed(&mut self, account_id: AccountId, balance: Balance) {
         log!("Closed @{} with {}", account_id, balance);
     }
@@ -372,17 +378,8 @@ impl FungibleTokenCore for Contract {
     #[payable]
     fn ft_transfer(&mut self, receiver_id: AccountId, amount: U128, memo: Option<String>) {
         self.abort_if_pause();
-        let sender_id = AccountId::try_from(env::predecessor_account_id())
-            .expect("Couldn't validate sender address");
-        match self.get_blacklist_status(&sender_id) {
-            BlackListStatus::Allowable => {
-                assert!(u128::from(self.ft_balance_of(sender_id)) >= u128::from(amount));
-                self.token.ft_transfer(receiver_id.clone(), amount, memo);
-            }
-            BlackListStatus::Banned => {
-                env::panic_str("Signer account is banned. Operation is not allowed.");
-            }
-        };
+        self.abort_if_blacklisted(&env::predecessor_account_id());
+        self.token.ft_transfer(receiver_id, amount, memo);
     }
 
     #[payable]
@@ -394,18 +391,9 @@ impl FungibleTokenCore for Contract {
         msg: String,
     ) -> PromiseOrValue<U128> {
         self.abort_if_pause();
-        let sender_id = AccountId::try_from(env::signer_account_id())
-            .expect("Couldn't validate sender address");
-        match self.get_blacklist_status(&sender_id) {
-            BlackListStatus::Allowable => {
-                assert!(u128::from(self.ft_balance_of(sender_id)) >= u128::from(amount));
-                self.token
-                    .ft_transfer_call(receiver_id.clone(), amount, memo, msg)
-            }
-            BlackListStatus::Banned => {
-                env::panic_str("Signer account is banned. Operation is not allowed.")
-            }
-        }
+        self.abort_if_blacklisted(&env::predecessor_account_id());
+        self.token
+            .ft_transfer_call(receiver_id.clone(), amount, memo, msg)
     }
 
     fn ft_total_supply(&self) -> U128 {
